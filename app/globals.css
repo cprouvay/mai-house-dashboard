@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --mai-blue-50:  #EBF4FA;
+  --mai-blue-100: #D2E9F5;
+  --mai-blue-200: #B8D6E8;
+  --mai-blue-300: #7EB8D4;
+  --mai-blue-400: #4A9BC0;
+  --mai-lav-50:   #F0EDF8;
+  --mai-lav-200:  #D4C5E2;
+  --mai-lav-300:  #B8A0D0;
+  --mai-pink-300: #D4879E;
+  --mai-cream:    #FDF8F4;
+  --mai-text-900: #1A2332;
+  --mai-text-700: #2D3748;
+  --mai-text-500: #718096;
+  --mai-text-300: #A0AEC0;
+  --mai-green:    #52A882;
+  --mai-amber:    #C9955A;
+  --mai-red:      #C97070;
+  --mai-shadow:   0 2px 12px rgba(126,184,212,0.15);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  color: var(--mai-text-700);
+  background-color: var(--mai-cream);
+}
+
+.mai-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid var(--mai-blue-100);
+  box-shadow: var(--mai-shadow);
+  padding: 1.25rem;
+}
+
+.progress-track {
+  height: 7px;
+  background: var(--mai-blue-50);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s ease;
+}
+
+.mai-tab {
+  font-size: 13px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--mai-blue-200);
+  background: transparent;
+  color: var(--mai-text-500);
+  cursor: pointer;
+}
+
+.mai-tab.active {
+  background: var(--mai-blue-200);
+  color: var(--mai-text-700);
+}
