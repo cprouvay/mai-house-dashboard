@@ -1,5 +1,7 @@
-import { supabase } from './supabase'
+import { createClient } from './supabase'
 import type { KPIDiario, Producto, Meta, ResumenMes } from '@/types'
+
+const supabase = createClient()
 
 export async function getKPIsMes(anio: number, mes: number): Promise<KPIDiario[]> {
   const mesStr = String(mes).padStart(2, '0')
