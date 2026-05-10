@@ -28,6 +28,8 @@ export default function FlujoCajaPage() {
     nEgresos: 0
   })
   const [loading, setLoading] = useState(true)
+  const [mesActual, setMesActual] = useState('')
+  const [anioActual, setAnioActual] = useState('')
 
   useEffect(() => {
     loadStats()
@@ -49,11 +51,23 @@ export default function FlujoCajaPage() {
 
   async function loadStats() {
     const now = new Date()
-    const mesActual = now.getMonth() + 1
-    const anioActual = now.getFullYear()
+    const mes = now.getMonth() + 1
+    const anio = now.getFullYear()
     
-    const inicioMes = `${anioActual}-${mesActual.toString().padStart(2, '0')}-01`
-    const inicioMesSiguiente = `${anioActual}-${(mesActual + 1).toString().padStart(2, '0')}-01`
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+    setMesActual(meses[mes - 1])
+    setAnioActual(anio.toString())
+    
+    const inicioMes = `${anio}-${mes.toString().padStart(2, '0')}-01`
+    
+    let mesSiguiente = mes + 1
+    let anioSiguiente = anio
+    if (mesSiguiente > 12) {
+      mesSiguiente = 1
+      anioSiguiente++
+    }
+    const inicioMesSiguiente = `${anioSiguiente}-${mesSiguiente.toString().padStart(2, '0')}-01`
 
     const { data: egresos } = await supabase
       .from('egresos')
@@ -117,6 +131,9 @@ export default function FlujoCajaPage() {
               </h1>
               <p className="text-gray-600">
                 Dashboard consolidado · Fehu Inversiones SPA
+              </p>
+              <p className="text-sm text-blue-600 font-semibold mt-2">
+                📅 {mesActual} {anioActual}
               </p>
             </div>
             <Link 
