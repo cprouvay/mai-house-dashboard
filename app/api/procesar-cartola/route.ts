@@ -14,7 +14,6 @@ interface Movimiento {
   tipo: 'egreso' | 'ingreso'
 }
 
-
 function categorizarEgreso(descripcion: string): string {
   const d = descripcion.toLowerCase()
   
@@ -77,11 +76,12 @@ export async function POST(request: NextRequest) {
     const worksheet = workbook.Sheets[sheetName]
     const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][]
 
+    // Buscar inicio de movimientos (fila con "Fecha")
     let inicioMovimientos = 0
-    for (let i = 0; i < Math.min(30, data.length); i++) {
+    for (let i = 0; i < Math.min(40, data.length); i++) {
       const row = data[i]
-      if (row && row.some(cell => String(cell).includes('Fecha'))) {
-        inicioMovimientos = i + 2
+      if (row && row.some(cell => String(cell).trim() === 'Fecha')) {
+        inicioMovimientos = i + 2 // Los datos empiezan 2 filas después
         break
       }
     }
@@ -90,25 +90,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No se encontró tabla de movimientos' }, { status: 400 })
     }
 
+    // Extraer año del nombre del archivo o usar año actual
     const now = new Date()
     const anio = now.getFullYear()
-    const mes = now.getMonth() + 1
 
     const egresos: Movimiento[] = []
     const ingresos: Movimiento[] = []
 
     for (let i = inicioMovimientos; i < data.length; i++) {
       const row = data[i]
+      
+      // Si la fila está vacía, continuar
       if (!row || !row[0]) continue
 
+      // Si es fila de total o saldo final, detener
       const rowText = row.join('').toLowerCase()
-      if (rowText.includes('total') || rowText.includes('saldo final')) continue
+      if (rowText.includes('total') || rowText.includes('saldo final')) {
+        break
+      }
 
+      // Parsear fecha (formato DD/MM)
       const fechaStr = String(row[0]).trim()
       let fecha = ''
       
       if (fechaStr.includes('/')) {
         const [dia, mesNum] = fechaStr.split('/')
+        // Validar que día y mes sean números válidos
+        const diaNum = parseInt(dia)
+        const mesNumInt = parseInt(mesNum)
+        
+        if (isNaN(diaNum) || isNaN(mesNumInt) || diaNum < 1 || diaNum > 31 || mesNumInt < 1 || mesNumInt > 12) {
+          continue
+        }
+        
         fecha = `${anio}-${mesNum.padStart(2, '0')}-${dia.padStart(2, '0')}`
       } else {
         continue
@@ -116,13 +130,16 @@ export async function POST(request: NextRequest) {
 
       const numeroDoc = row[1] ? String(row[1]).trim() : ''
       const descripcion = row[3] ? String(row[3]).trim() : 'Sin descripción'
+      
+      // Columnas: Fecha | Num Op | Sucursal | Descripción | Depósitos | Giros | Saldo
       const deposito = Number(row[4]) || 0
       const giro = Number(row[5]) || 0
 
-      const idTransaccion = numeroDoc 
+      const idTransaccion = numeroDoc && numeroDoc !== '0' && numeroDoc !== '000000000'
         ? `ITAU-${fecha}-${numeroDoc}`
-        : `ITAU-${fecha}-${Math.round(deposito || giro)}`
+        : `ITAU-${fecha}-${Math.round(deposito || giro)}-${i}`
 
+      // Egreso
       if (giro > 0) {
         egresos.push({
           fecha,
@@ -134,6 +151,7 @@ export async function POST(request: NextRequest) {
         })
       }
 
+      // Ingreso
       if (deposito > 0) {
         ingresos.push({
           fecha,
@@ -146,31 +164,38 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const mesInicio = `${anio}-${mes.toString().padStart(2, '0')}-01`
-    const mesSiguiente = mes === 12 ? 1 : mes + 1
-    const anioSiguiente = mes === 12 ? anio + 1 : anio
-    const mesFin = `${anioSiguiente}-${mesSiguiente.toString().padStart(2, '0')}-01`
+    // Consultar Supabase para ver qué ya está capturado
+    const fechas = [...egresos, ...ingresos].map(m => m.fecha)
+    const fechaMin = fechas.length > 0 ? fechas.sort()[0] : ''
+    const fechaMax = fechas.length > 0 ? fechas.sort()[fechas.length - 1] : ''
+    
+    if (!fechaMin || !fechaMax) {
+      return NextResponse.json({ error: 'No se encontraron transacciones válidas' }, { status: 400 })
+    }
 
+    // Egresos existentes
     const { data: egresosExistentes } = await supabase
       .from('egresos')
       .select('id_transaccion')
-      .gte('fecha', mesInicio)
-      .lt('fecha', mesFin)
+      .gte('fecha', fechaMin)
+      .lte('fecha', fechaMax)
 
     const idsEgresosExistentes = new Set(
       egresosExistentes?.map(e => e.id_transaccion) || []
     )
 
+    // Ingresos existentes
     const { data: ingresosExistentes } = await supabase
       .from('ingresos')
       .select('id_transaccion')
-      .gte('fecha', mesInicio)
-      .lt('fecha', mesFin)
+      .gte('fecha', fechaMin)
+      .lte('fecha', fechaMax)
 
     const idsIngresosExistentes = new Set(
       ingresosExistentes?.map(i => i.id_transaccion) || []
     )
 
+    // Filtrar solo faltantes
     const egresosFaltantes = egresos.filter(e => !idsEgresosExistentes.has(e.id_transaccion))
     const ingresosFaltantes = ingresos.filter(i => !idsIngresosExistentes.has(i.id_transaccion))
 
@@ -186,7 +211,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error procesando cartola:', error)
     return NextResponse.json(
-      { error: 'Error procesando cartola' },
+      { error: 'Error procesando cartola: ' + String(error) },
       { status: 500 }
     )
   }
