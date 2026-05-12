@@ -30,7 +30,7 @@ export default function FlujoCajaPage() {
     nEgresos: 0
   })
   const [loading, setLoading] = useState(true)
-  const [mesSeleccionado, setMesSeleccionado] = useState(0) // 0 = mes actual
+  const [mesSeleccionado, setMesSeleccionado] = useState(0)
   const [nombreMes, setNombreMes] = useState('')
   const [anioMes, setAnioMes] = useState('')
 
@@ -57,7 +57,6 @@ export default function FlujoCajaPage() {
     const mesActual = now.getMonth() + 1
     const anioActual = now.getFullYear()
     
-    // Calcular mes a consultar (actual - mesSeleccionado)
     let mes = mesActual - mesSeleccionado
     let anio = anioActual
     
@@ -66,13 +65,11 @@ export default function FlujoCajaPage() {
       anio--
     }
     
-    // Nombres de meses
     const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
     setNombreMes(meses[mes - 1])
     setAnioMes(anio.toString())
     
-    // Rango del mes seleccionado
     const inicioMes = `${anio}-${mes.toString().padStart(2, '0')}-01`
     
     let mesSiguiente = mes + 1
@@ -83,7 +80,6 @@ export default function FlujoCajaPage() {
     }
     const inicioMesSiguiente = `${anioSiguiente}-${mesSiguiente.toString().padStart(2, '0')}-01`
 
-    // CALCULAR SALDO INICIAL (último día del mes anterior)
     const finMesAnterior = inicioMes
     const { data: egresosAnteriores } = await supabase
       .from('egresos')
@@ -99,7 +95,6 @@ export default function FlujoCajaPage() {
     const totalIngresosAnteriores = ingresosAnteriores?.reduce((sum, i) => sum + Number(i.monto), 0) || 0
     const saldoInicial = totalIngresosAnteriores - totalEgresosAnteriores
 
-    // EGRESOS DEL MES
     const { data: egresos } = await supabase
       .from('egresos')
       .select('monto')
@@ -109,7 +104,6 @@ export default function FlujoCajaPage() {
     const totalEgresos = egresos?.reduce((sum, e) => sum + Number(e.monto), 0) || 0
     const nEgresos = egresos?.length || 0
 
-    // INGRESOS DEL MES
     const { data: ingresos } = await supabase
       .from('ingresos')
       .select('monto')
@@ -153,19 +147,13 @@ export default function FlujoCajaPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-      
       <div className="max-w-7xl mx-auto p-8">
         
-        {/* HEADER CON SELECTOR DE MES */}
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-4xl font-bold text-gray-800 mb-2">
-                💰 Flujo de Caja
-              </h1>
-              <p className="text-gray-600">
-                Dashboard consolidado · Fehu Inversiones SPA
-              </p>
+              <h1 className="text-4xl font-bold text-gray-800 mb-2">💰 Flujo de Caja</h1>
+              <p className="text-gray-600">Dashboard consolidado · Fehu Inversiones SPA</p>
             </div>
             <Link 
               href="/dashboard"
@@ -175,7 +163,6 @@ export default function FlujoCajaPage() {
             </Link>
           </div>
 
-          {/* SELECTOR DE MES */}
           <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl">
             <button
               onClick={() => setMesSeleccionado(mesSeleccionado + 1)}
@@ -207,10 +194,8 @@ export default function FlujoCajaPage() {
           </div>
         </div>
 
-        {/* KPIs PRINCIPALES */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           
-          {/* SALDO INICIAL */}
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="text-sm text-gray-600 mb-2">Saldo Inicial</div>
             <div className={`text-3xl font-bold mb-1 ${
@@ -221,7 +206,6 @@ export default function FlujoCajaPage() {
             <div className="text-xs text-gray-500">Cierre mes anterior</div>
           </div>
 
-          {/* INGRESOS */}
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="text-sm text-gray-600 mb-2">+ Ingresos</div>
             <div className="text-3xl font-bold text-green-600 mb-1">
@@ -230,7 +214,6 @@ export default function FlujoCajaPage() {
             <div className="text-xs text-gray-500">{stats.nIngresos} transacciones</div>
           </div>
 
-          {/* EGRESOS */}
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="text-sm text-gray-600 mb-2">- Egresos</div>
             <div className="text-3xl font-bold text-red-600 mb-1">
@@ -239,7 +222,6 @@ export default function FlujoCajaPage() {
             <div className="text-xs text-gray-500">{stats.nEgresos} transferencias</div>
           </div>
 
-          {/* SALDO FINAL */}
           <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-blue-200">
             <div className="text-sm text-gray-600 mb-2">= Saldo Final</div>
             <div className={`text-3xl font-bold mb-1 ${
@@ -252,7 +234,6 @@ export default function FlujoCajaPage() {
             </div>
           </div>
 
-          {/* % BREAKEVEN */}
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="text-sm text-gray-600 mb-2">% Breakeven</div>
             <div className={`text-3xl font-bold mb-1 ${
@@ -267,7 +248,6 @@ export default function FlujoCajaPage() {
 
         </div>
 
-        {/* ALERTA BREAKEVEN */}
         {stats.pctBreakeven >= 100 ? (
           <div className="bg-red-100 border-l-4 border-red-500 p-6 mb-8 rounded-lg">
             <div className="flex items-center">
@@ -286,8 +266,7 @@ export default function FlujoCajaPage() {
           </div>
         )}
 
-        {/* NAVEGACIÓN A DETALLES */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
           <Link 
             href="/dashboard/flujo-caja/egresos"
@@ -314,6 +293,20 @@ export default function FlujoCajaPage() {
             </p>
             <div className="text-sm text-gray-500">
               {stats.nIngresos} transacciones · {fmtCLP(stats.totalIngresos)}
+            </div>
+          </Link>
+
+          <Link 
+            href="/dashboard/flujo-caja/cierre-mensual"
+            className="bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer text-white"
+          >
+            <div className="text-5xl mb-4">🏦</div>
+            <h2 className="text-2xl font-bold mb-2">Cierre Mensual</h2>
+            <p className="text-white/90 mb-4">
+              Sube la cartola bancaria para completar movimientos faltantes
+            </p>
+            <div className="text-sm text-white/80">
+              Cargos automáticos, comisiones, propinas
             </div>
           </Link>
 
