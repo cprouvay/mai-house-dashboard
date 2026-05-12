@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase'
-import XLSX from 'xlsx'
+import * as XLSX from 'xlsx'
 
 const supabase = createClient()
 
