@@ -1,0 +1,8 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/dashboard/flujo-caja/egresos/page": "app/dashboard/flujo-caja/egresos/page.js",
+  "/dashboard/flujo-caja/ingresos/page": "app/dashboard/flujo-caja/ingresos/page.js",
+  "/dashboard/flujo-caja/page": "app/dashboard/flujo-caja/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/page": "app/page.js"
+}
