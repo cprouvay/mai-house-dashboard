@@ -16,6 +16,7 @@ interface Stats {
   nEgresos: number
 }
 
+
 export default function FlujoCajaPage() {
   const [stats, setStats] = useState<Stats>({
     totalIngresos: 0,
