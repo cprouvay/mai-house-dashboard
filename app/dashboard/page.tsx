@@ -180,38 +180,7 @@ export default function FlujoCajaPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <div className="text-sm text-gray-600 mb-2">% Breakeven</div>
-            <div className={`text-3xl font-bold mb-1 ${
-              stats.pctBreakeven >= 100 ? 'text-red-600' : 'text-blue-600'
-            }`}>
-              {stats.pctBreakeven.toFixed(1)}%
-            </div>
-            <div className="text-xs text-gray-500">
-              Meta: {fmtCLP(stats.breakeven)}
-            </div>
-          </div>
-
-        </div>
-
-        {stats.pctBreakeven >= 100 ? (
-          <div className="bg-red-100 border-l-4 border-red-500 p-6 mb-8 rounded-lg">
-            <div className="flex items-center">
-              <div className="text-red-700 font-semibold text-lg">
-                ⚠️ Egresos superan breakeven · Exceso: {fmtCLP(Math.abs(stats.margen))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-green-100 border-l-4 border-green-500 p-6 mb-8 rounded-lg">
-            <div className="flex items-center">
-              <div className="text-green-700 font-semibold text-lg">
-                ✅ Flujo controlado · Margen disponible: {fmtCLP(stats.margen)}
-              </div>
-            </div>
-          </div>
-        )}
-
+         {/* NAVEGACIÓN A DETALLES */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
           <Link 
@@ -221,7 +190,7 @@ export default function FlujoCajaPage() {
             <div className="text-5xl mb-4">📤</div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Egresos</h2>
             <p className="text-gray-600 mb-4">
-              Ver detalle de transferencias y gastos del mes
+              Ver detalle de transferencias y gastos de {nombreMes} {anioMes}
             </p>
             <div className="text-sm text-gray-500">
               {stats.nEgresos} transferencias · {fmtCLP(stats.totalEgresos)}
@@ -235,17 +204,14 @@ export default function FlujoCajaPage() {
             <div className="text-5xl mb-4">📥</div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Ingresos</h2>
             <p className="text-gray-600 mb-4">
-              Ver ingresos por medio de pago (BCI, Haulmer, SumUp)
+              Ver ingresos por medio de pago de {nombreMes} {anioMes}
             </p>
             <div className="text-sm text-gray-500">
               {stats.nIngresos} transacciones · {fmtCLP(stats.totalIngresos)}
             </div>
           </Link>
 
-        </div>
-
-      </div>
-      <Link 
+          <Link 
             href="/dashboard/flujo-caja/cierre-mensual"
             className="bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer text-white"
           >
@@ -260,6 +226,8 @@ export default function FlujoCajaPage() {
           </Link>
 
         </div>
+
+      </div>
     </div>
   )
 }
