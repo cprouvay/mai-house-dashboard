@@ -266,8 +266,10 @@ export default function FlujoCajaPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* ⭐ GRID ACTUALIZADO CON 4 BOTONES */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           
+          {/* Botón Egresos */}
           <Link 
             href="/dashboard/flujo-caja/egresos"
             className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
@@ -282,6 +284,7 @@ export default function FlujoCajaPage() {
             </div>
           </Link>
 
+          {/* Botón Ingresos */}
           <Link 
             href="/dashboard/flujo-caja/ingresos"
             className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer"
@@ -296,6 +299,7 @@ export default function FlujoCajaPage() {
             </div>
           </Link>
 
+          {/* Botón Cierre Mensual */}
           <Link 
             href="/dashboard/flujo-caja/cierre-mensual"
             className="bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer text-white"
@@ -307,6 +311,21 @@ export default function FlujoCajaPage() {
             </p>
             <div className="text-sm text-white/80">
               Cargos automáticos, comisiones, propinas
+            </div>
+          </Link>
+
+          {/* ⭐ NUEVO: Botón Proveedores */}
+          <Link 
+            href="/dashboard/proveedores"
+            className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer text-white"
+          >
+            <div className="text-5xl mb-4">📋</div>
+            <h2 className="text-2xl font-bold mb-2">Proveedores</h2>
+            <p className="text-white/90 mb-4">
+              Gestionar catálogo, categorías y costos fijos/variables
+            </p>
+            <div className="text-sm text-white/80">
+              Categorización automática de egresos
             </div>
           </Link>
 
