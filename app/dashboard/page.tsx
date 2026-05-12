@@ -212,7 +212,7 @@ export default function FlujoCajaPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
           <Link 
             href="/dashboard/flujo-caja/egresos"
@@ -245,6 +245,21 @@ export default function FlujoCajaPage() {
         </div>
 
       </div>
+      <Link 
+            href="/dashboard/flujo-caja/cierre-mensual"
+            className="bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all hover:scale-[1.02] cursor-pointer text-white"
+          >
+            <div className="text-5xl mb-4">🏦</div>
+            <h2 className="text-2xl font-bold mb-2">Cierre Mensual</h2>
+            <p className="text-white/90 mb-4">
+              Sube la cartola bancaria para completar movimientos faltantes
+            </p>
+            <div className="text-sm text-white/80">
+              Cargos automáticos, comisiones, propinas
+            </div>
+          </Link>
+
+        </div>
     </div>
   )
 }
