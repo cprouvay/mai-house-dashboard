@@ -14,6 +14,7 @@ interface Movimiento {
   tipo: 'egreso' | 'ingreso'
 }
 
+
 function categorizarEgreso(descripcion: string): string {
   const d = descripcion.toLowerCase()
   
