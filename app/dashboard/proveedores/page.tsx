@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import Link from 'next/link'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,6 +28,7 @@ export default function ProveedoresPage() {
   const [loading, setLoading] = useState(true)
   const [modalAbierto, setModalAbierto] = useState(false)
   const [editando, setEditando] = useState<Proveedor | null>(null)
+  const [ultimaActualizacion, setUltimaActualizacion] = useState<string>('')
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -65,6 +67,19 @@ export default function ProveedoresPage() {
       console.error('Error cargando proveedores:', error)
     } else {
       setProveedores(data || [])
+      
+      // Actualizar timestamp
+      const ahora = new Date()
+      const opciones: Intl.DateTimeFormatOptions = {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      }
+      setUltimaActualizacion(ahora.toLocaleString('es-CL', opciones))
     }
     setLoading(false)
   }
@@ -170,13 +185,28 @@ export default function ProveedoresPage() {
               <p className="text-gray-600">
                 Gestiona proveedores, categorías y costos fijos/variables
               </p>
+              {/* ⭐ NUEVO: Timestamp de última actualización */}
+              {ultimaActualizacion && (
+                <p className="text-sm text-gray-500 mt-2">
+                  🔄 Última actualización: {ultimaActualizacion}
+                </p>
+              )}
             </div>
-            <button
-              onClick={abrirModalNuevo}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all"
-            >
-              ➕ Nuevo Proveedor
-            </button>
+            <div className="flex gap-3">
+              {/* ⭐ NUEVO: Botón Volver */}
+              <Link
+                href="/dashboard/flujo-caja"
+                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+              >
+                ← Volver al Dashboard
+              </Link>
+              <button
+                onClick={abrirModalNuevo}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all"
+              >
+                ➕ Nuevo Proveedor
+              </button>
+            </div>
           </div>
 
           {/* KPIs */}
