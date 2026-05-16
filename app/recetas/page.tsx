@@ -1,5 +1,6 @@
-import Recetas from '@/components/Recetas';
+'use client'
+import Recetas from '@/components/Recetas'
 
 export default function RecetasPage() {
-  return <Recetas />;
+  return <Recetas />
 }
