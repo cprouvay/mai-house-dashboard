@@ -422,6 +422,5 @@ export default function FlujoCajaPage() {
       Calculadora interactiva
     </div>
   </div>
-</Link>
-  
+</Link>  
 }
