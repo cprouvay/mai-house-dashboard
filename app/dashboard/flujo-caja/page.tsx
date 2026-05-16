@@ -423,5 +423,5 @@ export default function FlujoCajaPage() {
     </div>
   </div>
 </Link>
-  )
+  
 }
