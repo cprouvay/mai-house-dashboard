@@ -407,24 +407,21 @@ export default function FlujoCajaPage() {
             </div>
           </Link>
 
-          {/* Botón Recetas - Próximamente */}
-          <div className="bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl shadow-lg p-6 md:p-8 opacity-50 cursor-not-allowed relative overflow-hidden">
-            <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded">
-              Próximamente
-            </div>
-            <div className="text-4xl md:text-5xl mb-4">🧪</div>
-            <h2 className="text-xl md:text-2xl font-bold mb-2 text-white">Recetas</h2>
-            <p className="text-white/90 mb-4 text-sm md:text-base">
-              Costeo y márgenes por producto
-            </p>
-            <div className="text-xs md:text-sm text-white/80">
-              Calculadora interactiva
-            </div>
-          </div>
-
-        </div>
-
-      </div>
+          {/* Botón Recetas - ACTIVO */}
+<Link href="/recetas">
+  <div className="bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl shadow-lg p-6 md:p-8 hover:shadow-xl transition-all hover:scale-105 cursor-pointer relative overflow-hidden">
+    <div className="absolute top-2 right-2 bg-green-400 text-green-900 text-xs font-bold px-2 py-1 rounded">
+      ✅ Activo
     </div>
+    <div className="text-4xl md:text-5xl mb-4">🧪</div>
+    <h2 className="text-xl md:text-2xl font-bold mb-2 text-white">Recetas</h2>
+    <p className="text-white/90 mb-4 text-sm md:text-base">
+      Gestión de costos y márgenes
+    </p>
+    <div className="text-xs md:text-sm text-white/80">
+      Calculadora interactiva
+    </div>
+  </div>
+</Link>
   )
 }
