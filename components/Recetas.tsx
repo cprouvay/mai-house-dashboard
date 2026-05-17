@@ -733,7 +733,8 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
   const handleSave = async () => {
     setGuardando(true)
     try {
-      const { error } = await supabase
+      // Primero actualizar los datos básicos
+      const { error: updateError } = await supabase
         .from('recetas')
         .update({
           nombre: form.nombre,
@@ -743,12 +744,28 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
         })
         .eq('id', producto.id)
 
-      if (error) throw error
+      if (updateError) throw updateError
 
-      // Esperar un momento para que los triggers de BD se ejecuten
-      await new Promise(resolve => setTimeout(resolve, 500))
+      // Calcular márgenes manualmente
+      const costo = productoActual.costo_por_porcion
+      const margen_pesos = form.precio_venta - costo
+      const margen_porcentaje = costo > 0 ? ((margen_pesos / form.precio_venta) * 100) : 0
 
-      // Recargar el producto completo con márgenes recalculados
+      // Actualizar márgenes calculados
+      const { error: margenError } = await supabase
+        .from('recetas')
+        .update({
+          margen_pesos: margen_pesos,
+          margen_porcentaje: margen_porcentaje
+        })
+        .eq('id', producto.id)
+
+      if (margenError) throw margenError
+
+      // Esperar un momento
+      await new Promise(resolve => setTimeout(resolve, 300))
+
+      // Recargar el producto completo
       await recargarProducto()
 
       setModoEdicion(false)
