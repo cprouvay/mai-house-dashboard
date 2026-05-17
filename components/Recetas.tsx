@@ -1257,6 +1257,7 @@ function AgregarIngredienteForm({
   const [insumos, setInsumos] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [guardando, setGuardando] = useState(false)
+  const [exito, setExito] = useState(false)
   const [insumoSeleccionado, setInsumoSeleccionado] = useState<number | null>(null)
   const [cantidad, setCantidad] = useState<number>(0)
   const [categoriaFiltro, setCategoriaFiltro] = useState('Todos')
@@ -1300,12 +1301,25 @@ function AgregarIngredienteForm({
 
       if (error) throw error
 
+      // Mostrar mensaje de éxito
+      setExito(true)
+
+      // Esperar que los triggers recalculen
+      await new Promise(resolve => setTimeout(resolve, 800))
+
+      // Limpiar formulario
+      setInsumoSeleccionado(null)
+      setCantidad(0)
+      setCategoriaFiltro('Todos')
+      
+      // Notificar éxito y cerrar
       onAdded()
     } catch (error) {
       console.error('Error agregando ingrediente:', error)
       alert('Error al agregar el ingrediente')
     } finally {
       setGuardando(false)
+      setExito(false)
     }
   }
 
@@ -1400,19 +1414,21 @@ function AgregarIngredienteForm({
           <div className="flex gap-3">
             <button
               onClick={handleAgregar}
-              disabled={guardando || !insumoSeleccionado || cantidad <= 0}
+              disabled={guardando || exito || !insumoSeleccionado || cantidad <= 0}
               className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-colors ${
-                guardando || !insumoSeleccionado || cantidad <= 0
+                exito
+                  ? 'bg-green-600 text-white'
+                  : guardando || !insumoSeleccionado || cantidad <= 0
                   ? 'bg-gray-300 cursor-not-allowed'
                   : 'bg-green-500 text-white hover:bg-green-600'
               }`}
             >
-              {guardando ? '⏳ Agregando...' : '✓ Agregar Ingrediente'}
+              {exito ? '✅ ¡Ingrediente Agregado!' : guardando ? '⏳ Agregando...' : '✓ Agregar Ingrediente'}
             </button>
             <button
               onClick={onClose}
-              disabled={guardando}
-              className="px-6 py-3 bg-gray-200 rounded-lg hover:bg-gray-300 font-semibold"
+              disabled={guardando || exito}
+              className="px-6 py-3 bg-gray-200 rounded-lg hover:bg-gray-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancelar
             </button>
