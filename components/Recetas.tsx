@@ -1,26 +1,43 @@
 'use client'
 import React, { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 
 const supabase = createClient()
+
 // Componente principal de Calculadora de Recetas
 export default function Recetas() {
   const [activeTab, setActiveTab] = useState('insumos') // insumos, productos, analisis
+  const router = useRouter()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-6">
       {/* Header */}
       <div className="max-w-7xl mx-auto mb-8">
         <div className="bg-white rounded-2xl shadow-lg p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                🧪 Calculadora de Recetas
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Gestión de costos, márgenes y análisis de productos
-              </p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              {/* Botón Volver */}
+              <button
+                onClick={() => router.push('/dashboard/flujo-caja')}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-2 font-medium text-gray-700"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Volver
+              </button>
+              
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  🧪 Calculadora de Recetas
+                </h1>
+                <p className="text-gray-600 mt-1 text-sm md:text-base">
+                  Gestión de costos, márgenes y análisis de productos
+                </p>
+              </div>
             </div>
+            
             <div className="text-right">
               <div className="text-sm text-gray-500">Total Productos</div>
               <div className="text-3xl font-bold text-purple-600">73</div>
