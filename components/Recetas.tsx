@@ -101,6 +101,7 @@ function TabInsumos() {
   const [insumos, setInsumos] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [categoriaFiltro, setCategoriaFiltro] = useState('Todos')
+  const [insumoEditar, setInsumoEditar] = useState<any>(null)
 
   useEffect(() => {
     cargarInsumos()
@@ -171,6 +172,7 @@ function TabInsumos() {
                 <th className="px-6 py-4 text-right">Precio Unitario</th>
                 <th className="px-6 py-4 text-left">Unidad</th>
                 <th className="px-6 py-4 text-left">Notas</th>
+                <th className="px-6 py-4 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -190,6 +192,14 @@ function TabInsumos() {
                   <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                     {insumo.notas}
                   </td>
+                  <td className="px-6 py-4 text-center">
+                    <button
+                      onClick={() => setInsumoEditar(insumo)}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                    >
+                      ✏️ Editar
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -208,6 +218,222 @@ function TabInsumos() {
             <div className="text-sm opacity-90">Total en sistema</div>
             <div className="text-3xl font-bold mt-1">{insumos.length}</div>
           </div>
+        </div>
+      </div>
+
+      {/* Modal de Edición */}
+      {insumoEditar && (
+        <ModalEditarInsumo
+          insumo={insumoEditar}
+          onClose={() => setInsumoEditar(null)}
+          onSave={cargarInsumos}
+        />
+      )}
+    </div>
+  )
+}
+
+// ============================================================
+// MODAL: Editar Insumo
+// ============================================================
+function ModalEditarInsumo({ insumo, onClose, onSave }: { insumo: any, onClose: () => void, onSave: () => void }) {
+  const [form, setForm] = useState({
+    nombre: insumo.nombre,
+    precio_unitario: insumo.precio_unitario,
+    unidad_medida: insumo.unidad_medida,
+    categoria: insumo.categoria,
+    notas: insumo.notas || ''
+  })
+  const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSave = async () => {
+    setGuardando(true)
+    setError('')
+    
+    try {
+      const { error: updateError } = await supabase
+        .from('insumos')
+        .update(form)
+        .eq('id', insumo.id)
+      
+      if (updateError) throw updateError
+      
+      onSave()
+      onClose()
+    } catch (err: any) {
+      setError(err.message || 'Error al guardar')
+      console.error('Error actualizando insumo:', err)
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-t-2xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Editar Insumo</h2>
+              <p className="text-blue-100 text-sm mt-1">Código: {insumo.codigo}</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-white hover:bg-blue-600 rounded-lg p-2 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Formulario */}
+        <div className="p-6 space-y-4">
+          {/* Nombre */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Nombre del Insumo
+            </label>
+            <input
+              type="text"
+              value={form.nombre}
+              onChange={(e) => setForm({...form, nombre: e.target.value})}
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+              placeholder="Ej: Café espresso"
+            />
+          </div>
+
+          {/* Precio y Unidad con visualización */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Precio Unitario
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
+                  $
+                </span>
+                <input
+                  type="number"
+                  value={form.precio_unitario}
+                  onChange={(e) => setForm({...form, precio_unitario: parseFloat(e.target.value) || 0})}
+                  className="w-full pl-8 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                  placeholder="0"
+                />
+              </div>
+              {/* Precio formateado */}
+              <div className="mt-2 text-sm text-gray-600">
+                <span className="font-semibold text-green-600">
+                  ${form.precio_unitario.toLocaleString('es-CL')}
+                </span>
+                <span className="text-gray-500"> / {form.unidad_medida || 'unidad'}</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Unidad de Medida
+              </label>
+              <input
+                type="text"
+                value={form.unidad_medida}
+                onChange={(e) => setForm({...form, unidad_medida: e.target.value})}
+                className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                placeholder="Ej: kg, ml, unidad"
+              />
+              <div className="mt-2 text-xs text-gray-500">
+                💡 Ejemplos: kg, gr, ml, l, unidad
+              </div>
+            </div>
+          </div>
+
+          {/* Vista previa del precio por unidad - destacado */}
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">💰</span>
+                <div>
+                  <div className="text-xs text-gray-600 font-semibold">Precio por Unidad</div>
+                  <div className="text-xl font-bold text-green-700">
+                    ${form.precio_unitario.toLocaleString('es-CL')} / {form.unidad_medida || 'unidad'}
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-xs text-gray-600">Este precio se usará en</div>
+                <div className="text-sm font-semibold text-gray-700">todas las recetas</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Categoría */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Categoría
+            </label>
+            <select
+              value={form.categoria}
+              onChange={(e) => setForm({...form, categoria: e.target.value})}
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+            >
+              <option value="Café">Café</option>
+              <option value="Lácteos">Lácteos</option>
+              <option value="Té">Té</option>
+              <option value="Jarabes">Jarabes</option>
+              <option value="Endulzantes">Endulzantes</option>
+              <option value="Repostería">Repostería</option>
+              <option value="Boba">Boba</option>
+              <option value="Packaging">Packaging</option>
+              <option value="Proveedor repostería">Proveedor repostería</option>
+              <option value="Otros">Otros</option>
+            </select>
+          </div>
+
+          {/* Notas */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Notas (Opcional)
+            </label>
+            <textarea
+              value={form.notas}
+              onChange={(e) => setForm({...form, notas: e.target.value})}
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+              rows={3}
+              placeholder="Información adicional sobre el insumo..."
+            />
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+              <p className="text-red-700 text-sm">❌ {error}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Botones */}
+        <div className="p-6 bg-gray-50 rounded-b-2xl flex gap-4">
+          <button
+            onClick={handleSave}
+            disabled={guardando}
+            className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-colors ${
+              guardando
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-500 hover:bg-blue-600 text-white'
+            }`}
+          >
+            {guardando ? '💾 Guardando...' : '💾 Guardar Cambios'}
+          </button>
+          <button
+            onClick={onClose}
+            disabled={guardando}
+            className="px-6 py-3 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold transition-colors"
+          >
+            Cancelar
+          </button>
         </div>
       </div>
     </div>
