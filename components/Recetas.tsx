@@ -669,6 +669,7 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
   const [loading, setLoading] = useState(true)
   const [modoEdicion, setModoEdicion] = useState(false)
   const [guardando, setGuardando] = useState(false)
+  const [modoAgregarIngrediente, setModoAgregarIngrediente] = useState(false)
   const [productoActual, setProductoActual] = useState(producto)
   const [form, setForm] = useState({
     nombre: producto.nombre,
@@ -682,13 +683,16 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
   }, [])
 
   const cargarIngredientes = async () => {
+    setLoading(true)
     try {
       const { data, error } = await supabase
         .from('receta_ingredientes')
         .select(`
+          id,
           cantidad,
           costo_ingrediente,
           insumos (
+            id,
             nombre,
             unidad_medida,
             precio_unitario,
@@ -703,6 +707,44 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
       console.error('Error cargando ingredientes:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const editarCantidadIngrediente = async (ingredienteId: number, nuevaCantidad: number) => {
+    try {
+      const { error } = await supabase
+        .from('receta_ingredientes')
+        .update({ cantidad: nuevaCantidad })
+        .eq('id', ingredienteId)
+
+      if (error) throw error
+
+      await new Promise(resolve => setTimeout(resolve, 300))
+      await cargarIngredientes()
+      await recargarProducto()
+    } catch (error) {
+      console.error('Error editando cantidad:', error)
+      alert('Error al actualizar la cantidad')
+    }
+  }
+
+  const eliminarIngrediente = async (ingredienteId: number) => {
+    if (!confirm('¿Estás seguro de eliminar este ingrediente?')) return
+
+    try {
+      const { error } = await supabase
+        .from('receta_ingredientes')
+        .delete()
+        .eq('id', ingredienteId)
+
+      if (error) throw error
+
+      await new Promise(resolve => setTimeout(resolve, 300))
+      await cargarIngredientes()
+      await recargarProducto()
+    } catch (error) {
+      console.error('Error eliminando ingrediente:', error)
+      alert('Error al eliminar el ingrediente')
     }
   }
 
@@ -936,7 +978,17 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
         </div>
 
         <div className="p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">📋 Ingredientes de la Receta</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-800">📋 Ingredientes de la Receta</h3>
+            {!modoEdicion && (
+              <button
+                onClick={() => setModoEdicion(true)}
+                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold transition-colors"
+              >
+                ➕ Gestionar Ingredientes
+              </button>
+            )}
+          </div>
           
           {loading ? (
             <div className="text-center py-8">
@@ -948,52 +1000,101 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
               <div className="text-4xl mb-2">⚠️</div>
               <p className="text-yellow-800 font-semibold">Este producto no tiene ingredientes registrados</p>
               <p className="text-yellow-600 text-sm mt-1">Por eso el costo es $0</p>
+              {modoEdicion && (
+                <button
+                  onClick={() => setModoAgregarIngrediente(true)}
+                  className="mt-4 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold"
+                >
+                  ➕ Agregar Primer Ingrediente
+                </button>
+              )}
             </div>
           ) : (
-            <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Ingrediente</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Categoría</th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Cantidad</th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Precio Unit.</th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Costo</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {ingredientes.map((ing, idx) => (
-                    <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="px-4 py-3 font-medium text-gray-900">
-                        {ing.insumos.nombre}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
-                          {ing.insumos.categoria}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right text-gray-700">
-                        {ing.cantidad} {ing.insumos.unidad_medida}
-                      </td>
-                      <td className="px-4 py-3 text-right text-gray-600">
-                        ${ing.insumos.precio_unitario.toLocaleString('es-CL')}
-                      </td>
-                      <td className="px-4 py-3 text-right font-bold text-green-600">
-                        ${ing.costo_ingrediente.toLocaleString('es-CL')}
-                      </td>
+            <>
+              {/* Formulario Agregar Ingrediente */}
+              {modoEdicion && modoAgregarIngrediente && (
+                <AgregarIngredienteForm
+                  recetaId={producto.id}
+                  onClose={() => setModoAgregarIngrediente(false)}
+                  onAdded={() => {
+                    cargarIngredientes()
+                    recargarProducto()
+                    setModoAgregarIngrediente(false)
+                  }}
+                />
+              )}
+
+              {/* Botón Agregar Ingrediente (cuando ya hay ingredientes) */}
+              {modoEdicion && !modoAgregarIngrediente && (
+                <div className="mb-4">
+                  <button
+                    onClick={() => setModoAgregarIngrediente(true)}
+                    className="w-full px-4 py-3 bg-green-50 border-2 border-green-300 text-green-700 rounded-lg hover:bg-green-100 font-semibold transition-colors"
+                  >
+                    ➕ Agregar Nuevo Ingrediente
+                  </button>
+                </div>
+              )}
+
+              {/* Tabla de Ingredientes */}
+              <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Ingrediente</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Categoría</th>
+                      <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Cantidad</th>
+                      <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Precio Unit.</th>
+                      <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Costo</th>
+                      {modoEdicion && (
+                        <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Acciones</th>
+                      )}
                     </tr>
-                  ))}
-                  <tr className="bg-purple-50 font-bold">
-                    <td colSpan={4} className="px-4 py-3 text-right text-gray-900">
-                      COSTO TOTAL:
-                    </td>
-                    <td className="px-4 py-3 text-right text-purple-600 text-lg">
-                      ${productoActual.costo_total.toLocaleString('es-CL')}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {ingredientes.map((ing, idx) => (
+                      <FilaIngrediente
+                        key={ing.id || idx}
+                        ingrediente={ing}
+                        modoEdicion={modoEdicion}
+                        onCantidadChange={async (nuevaCantidad) => {
+                          await editarCantidadIngrediente(ing.id, nuevaCantidad)
+                        }}
+                        onEliminar={async () => {
+                          await eliminarIngrediente(ing.id)
+                        }}
+                        isEven={idx % 2 === 0}
+                      />
+                    ))}
+                    <tr className="bg-purple-50 font-bold">
+                      <td colSpan={modoEdicion ? 5 : 4} className="px-4 py-3 text-right text-gray-900">
+                        COSTO TOTAL:
+                      </td>
+                      <td className="px-4 py-3 text-right text-purple-600 text-lg">
+                        ${productoActual.costo_total.toLocaleString('es-CL')}
+                      </td>
+                      {modoEdicion && <td></td>}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Botones de Control de Modo Edición */}
+              {modoEdicion && (
+                <div className="mt-4 flex gap-4">
+                  <button
+                    onClick={async () => {
+                      setModoEdicion(false)
+                      setModoAgregarIngrediente(false)
+                      await recargarProducto()
+                    }}
+                    className="flex-1 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-semibold"
+                  >
+                    ✓ Finalizar Edición
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -1018,6 +1119,285 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ============================================================
+// COMPONENTE: Fila de Ingrediente Editable
+// ============================================================
+function FilaIngrediente({ 
+  ingrediente, 
+  modoEdicion, 
+  onCantidadChange, 
+  onEliminar,
+  isEven 
+}: { 
+  ingrediente: any, 
+  modoEdicion: boolean, 
+  onCantidadChange: (cantidad: number) => void,
+  onEliminar: () => void,
+  isEven: boolean
+}) {
+  const [editando, setEditando] = useState(false)
+  const [cantidad, setCantidad] = useState(ingrediente.cantidad)
+
+  const handleSave = async () => {
+    if (cantidad !== ingrediente.cantidad) {
+      await onCantidadChange(cantidad)
+    }
+    setEditando(false)
+  }
+
+  return (
+    <tr className={isEven ? 'bg-white' : 'bg-gray-50'}>
+      <td className="px-4 py-3 font-medium text-gray-900">
+        {ingrediente.insumos.nombre}
+      </td>
+      <td className="px-4 py-3">
+        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
+          {ingrediente.insumos.categoria}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-right text-gray-700">
+        {modoEdicion && editando ? (
+          <div className="flex items-center justify-end gap-2">
+            <input
+              type="number"
+              value={cantidad}
+              onChange={(e) => setCantidad(Number(e.target.value) || 0)}
+              className="w-20 px-2 py-1 border-2 border-blue-300 rounded text-right"
+              step="0.01"
+              min="0"
+            />
+            <span className="text-sm">{ingrediente.insumos.unidad_medida}</span>
+            <button
+              onClick={handleSave}
+              className="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-xs"
+            >
+              ✓
+            </button>
+            <button
+              onClick={() => {
+                setCantidad(ingrediente.cantidad)
+                setEditando(false)
+              }}
+              className="px-2 py-1 bg-gray-300 rounded hover:bg-gray-400 text-xs"
+            >
+              ✗
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-end gap-2">
+            <span>{ingrediente.cantidad} {ingrediente.insumos.unidad_medida}</span>
+            {modoEdicion && (
+              <button
+                onClick={() => setEditando(true)}
+                className="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs"
+              >
+                ✏️
+              </button>
+            )}
+          </div>
+        )}
+      </td>
+      <td className="px-4 py-3 text-right text-gray-600">
+        ${ingrediente.insumos.precio_unitario.toLocaleString('es-CL')}
+      </td>
+      <td className="px-4 py-3 text-right font-bold text-green-600">
+        ${ingrediente.costo_ingrediente.toLocaleString('es-CL')}
+      </td>
+      {modoEdicion && (
+        <td className="px-4 py-3 text-center">
+          <button
+            onClick={onEliminar}
+            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm font-medium"
+          >
+            🗑️
+          </button>
+        </td>
+      )}
+    </tr>
+  )
+}
+
+// ============================================================
+// COMPONENTE: Formulario Agregar Ingrediente
+// ============================================================
+function AgregarIngredienteForm({ 
+  recetaId, 
+  onClose, 
+  onAdded 
+}: { 
+  recetaId: number, 
+  onClose: () => void, 
+  onAdded: () => void 
+}) {
+  const [insumos, setInsumos] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [guardando, setGuardando] = useState(false)
+  const [insumoSeleccionado, setInsumoSeleccionado] = useState<number | null>(null)
+  const [cantidad, setCantidad] = useState<number>(0)
+  const [categoriaFiltro, setCategoriaFiltro] = useState('Todos')
+
+  useEffect(() => {
+    cargarInsumos()
+  }, [])
+
+  const cargarInsumos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('insumos')
+        .select('*')
+        .eq('activo', true)
+        .order('nombre')
+
+      if (error) throw error
+      setInsumos(data || [])
+    } catch (error) {
+      console.error('Error cargando insumos:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAgregar = async () => {
+    if (!insumoSeleccionado || cantidad <= 0) {
+      alert('Selecciona un insumo y una cantidad válida')
+      return
+    }
+
+    setGuardando(true)
+    try {
+      const { error } = await supabase
+        .from('receta_ingredientes')
+        .insert([{
+          receta_id: recetaId,
+          insumo_id: insumoSeleccionado,
+          cantidad: cantidad
+        }])
+
+      if (error) throw error
+
+      onAdded()
+    } catch (error) {
+      console.error('Error agregando ingrediente:', error)
+      alert('Error al agregar el ingrediente')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  const categorias = ['Todos', ...new Set(insumos.map(i => i.categoria))]
+  const insumosFiltrados = categoriaFiltro === 'Todos' 
+    ? insumos 
+    : insumos.filter(i => i.categoria === categoriaFiltro)
+
+  return (
+    <div className="bg-green-50 border-2 border-green-300 rounded-lg p-6 mb-4">
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="text-lg font-bold text-gray-800">➕ Agregar Ingrediente</h4>
+        <button
+          onClick={onClose}
+          className="text-gray-500 hover:text-gray-700"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Filtro por categoría */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Filtrar por categoría:
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {categorias.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => setCategoriaFiltro(cat)}
+                  className={`px-3 py-1 rounded text-sm font-medium transition-all ${
+                    categoriaFiltro === cat
+                      ? 'bg-green-500 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Selector de insumo */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Insumo
+            </label>
+            <select
+              value={insumoSeleccionado || ''}
+              onChange={(e) => setInsumoSeleccionado(Number(e.target.value))}
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+            >
+              <option value="">Seleccionar insumo...</option>
+              {insumosFiltrados.map(insumo => (
+                <option key={insumo.id} value={insumo.id}>
+                  {insumo.nombre} (${insumo.precio_unitario.toLocaleString('es-CL')} / {insumo.unidad_medida})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Cantidad */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Cantidad
+            </label>
+            <input
+              type="number"
+              value={cantidad}
+              onChange={(e) => setCantidad(Number(e.target.value) || 0)}
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+              placeholder="0"
+              step="0.01"
+              min="0"
+            />
+            {insumoSeleccionado && (
+              <p className="text-sm text-gray-600 mt-1">
+                Unidad: {insumos.find(i => i.id === insumoSeleccionado)?.unidad_medida}
+              </p>
+            )}
+          </div>
+
+          {/* Botones */}
+          <div className="flex gap-3">
+            <button
+              onClick={handleAgregar}
+              disabled={guardando || !insumoSeleccionado || cantidad <= 0}
+              className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-colors ${
+                guardando || !insumoSeleccionado || cantidad <= 0
+                  ? 'bg-gray-300 cursor-not-allowed'
+                  : 'bg-green-500 text-white hover:bg-green-600'
+              }`}
+            >
+              {guardando ? '⏳ Agregando...' : '✓ Agregar Ingrediente'}
+            </button>
+            <button
+              onClick={onClose}
+              disabled={guardando}
+              className="px-6 py-3 bg-gray-200 rounded-lg hover:bg-gray-300 font-semibold"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
