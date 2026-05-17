@@ -980,7 +980,7 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold text-gray-800">📋 Ingredientes de la Receta</h3>
-            {!modoEdicion && (
+            {!modoEdicion && ingredientes.length > 0 && (
               <button
                 onClick={() => setModoEdicion(true)}
                 className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold transition-colors"
@@ -1000,13 +1000,34 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
               <div className="text-4xl mb-2">⚠️</div>
               <p className="text-yellow-800 font-semibold">Este producto no tiene ingredientes registrados</p>
               <p className="text-yellow-600 text-sm mt-1">Por eso el costo es $0</p>
-              {modoEdicion && (
+              
+              {/* Siempre mostrar opción de agregar cuando no hay ingredientes */}
+              {!modoAgregarIngrediente ? (
                 <button
-                  onClick={() => setModoAgregarIngrediente(true)}
+                  onClick={() => {
+                    setModoEdicion(true)
+                    setModoAgregarIngrediente(true)
+                  }}
                   className="mt-4 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold"
                 >
                   ➕ Agregar Primer Ingrediente
                 </button>
+              ) : (
+                <div className="mt-4">
+                  <AgregarIngredienteForm
+                    recetaId={producto.id}
+                    onClose={() => {
+                      setModoAgregarIngrediente(false)
+                      setModoEdicion(false)
+                    }}
+                    onAdded={() => {
+                      cargarIngredientes()
+                      recargarProducto()
+                      setModoAgregarIngrediente(false)
+                      setModoEdicion(false)
+                    }}
+                  />
+                </div>
               )}
             </div>
           ) : (
