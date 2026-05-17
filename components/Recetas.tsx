@@ -667,6 +667,14 @@ function TabProductos() {
 function ModalProducto({ producto, onClose }: { producto: any, onClose: () => void }) {
   const [ingredientes, setIngredientes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [modoEdicion, setModoEdicion] = useState(false)
+  const [guardando, setGuardando] = useState(false)
+  const [form, setForm] = useState({
+    nombre: producto.nombre,
+    precio_venta: producto.precio_venta,
+    categoria: producto.categoria,
+    porciones: producto.porciones
+  })
 
   useEffect(() => {
     cargarIngredientes()
@@ -697,6 +705,36 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
     }
   }
 
+  const handleSave = async () => {
+    setGuardando(true)
+    try {
+      const { error } = await supabase
+        .from('recetas')
+        .update({
+          nombre: form.nombre,
+          precio_venta: form.precio_venta,
+          categoria: form.categoria,
+          porciones: form.porciones
+        })
+        .eq('id', producto.id)
+
+      if (error) throw error
+
+      // Actualizar el producto local
+      producto.nombre = form.nombre
+      producto.precio_venta = form.precio_venta
+      producto.categoria = form.categoria
+      producto.porciones = form.porciones
+
+      setModoEdicion(false)
+    } catch (error) {
+      console.error('Error guardando producto:', error)
+      alert('Error al guardar los cambios')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
   const semaforo = producto.margen_porcentaje >= 60 ? '🟢' :
                    producto.margen_porcentaje >= 40 ? '🟡' : '🔴'
 
@@ -706,34 +744,127 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
         <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-t-2xl">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <span className="text-4xl">{semaforo}</span>
-                <div>
-                  <h2 className="text-2xl font-bold">{producto.nombre}</h2>
-                  <p className="text-purple-100">{producto.categoria}</p>
+              {!modoEdicion ? (
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-4xl">{semaforo}</span>
+                  <div>
+                    <h2 className="text-2xl font-bold">{producto.nombre}</h2>
+                    <p className="text-purple-100">{producto.categoria}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="text-sm font-mono bg-purple-600 bg-opacity-50 px-3 py-1 rounded inline-block">
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-4xl">{semaforo}</span>
+                    <div className="flex-1">
+                      <label className="block text-xs text-purple-100 mb-1">Nombre del Producto</label>
+                      <input
+                        type="text"
+                        value={form.nombre}
+                        onChange={(e) => setForm({...form, nombre: e.target.value})}
+                        className="w-full px-4 py-2 rounded-lg text-gray-900 font-bold text-xl"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-purple-100 mb-1">Categoría</label>
+                    <select
+                      value={form.categoria}
+                      onChange={(e) => setForm({...form, categoria: e.target.value})}
+                      className="w-full px-4 py-2 rounded-lg text-gray-900"
+                    >
+                      <option value="Lattes">Lattes</option>
+                      <option value="Boba Tea">Boba Tea</option>
+                      <option value="Pasteleria">Pasteleria</option>
+                      <option value="Pasteleria Vegan">Pasteleria Vegan</option>
+                      <option value="New york Cookie">New york Cookie</option>
+                      <option value="Gatchas">Gatchas</option>
+                      <option value="Mai Favorites 🩵">Mai Favorites 🩵</option>
+                      <option value="Soda Pop">Soda Pop</option>
+                      <option value="Iced Tea">Iced Tea</option>
+                      <option value="Blended">Blended</option>
+                      <option value="Extras">Extras</option>
+                      <option value="Otros">Otros</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+              <div className="text-sm font-mono bg-purple-600 bg-opacity-50 px-3 py-1 rounded inline-block mt-2">
                 {producto.codigo}
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="text-white hover:bg-purple-600 rounded-lg p-2 transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            
+            <div className="flex gap-2 ml-4">
+              {!modoEdicion ? (
+                <button
+                  onClick={() => setModoEdicion(true)}
+                  className="px-4 py-2 bg-white text-purple-600 rounded-lg hover:bg-purple-50 font-semibold transition-colors"
+                >
+                  ✏️ Editar
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={handleSave}
+                    disabled={guardando}
+                    className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                      guardando
+                        ? 'bg-gray-400 cursor-not-allowed text-white'
+                        : 'bg-green-500 text-white hover:bg-green-600'
+                    }`}
+                  >
+                    {guardando ? '💾 Guardando...' : '💾 Guardar'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setModoEdicion(false)
+                      setForm({
+                        nombre: producto.nombre,
+                        precio_venta: producto.precio_venta,
+                        categoria: producto.categoria,
+                        porciones: producto.porciones
+                      })
+                    }}
+                    disabled={guardando}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-semibold transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </>
+              )}
+              
+              <button
+                onClick={onClose}
+                className="text-white hover:bg-purple-600 rounded-lg p-2 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-gray-50">
           <div className="text-center">
             <div className="text-sm text-gray-600">Precio Venta</div>
-            <div className="text-2xl font-bold text-blue-600">
-              ${producto.precio_venta.toLocaleString('es-CL')}
-            </div>
+            {!modoEdicion ? (
+              <div className="text-2xl font-bold text-blue-600">
+                ${producto.precio_venta.toLocaleString('es-CL')}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center">
+                <input
+                  type="number"
+                  value={form.precio_venta}
+                  onChange={(e) => setForm({...form, precio_venta: parseFloat(e.target.value) || 0})}
+                  className="w-full px-2 py-1 text-center text-xl font-bold text-blue-600 border-2 border-blue-300 rounded"
+                />
+                <div className="text-xs text-gray-500 mt-1">
+                  ${form.precio_venta.toLocaleString('es-CL')}
+                </div>
+              </div>
+            )}
           </div>
           <div className="text-center">
             <div className="text-sm text-gray-600">Costo Total</div>
