@@ -656,7 +656,10 @@ function TabProductos() {
       {productoSeleccionado && (
         <ModalProducto 
           producto={productoSeleccionado} 
-          onClose={() => setProductoSeleccionado(null)} 
+          onClose={() => {
+            setProductoSeleccionado(null)
+            cargarProductos() // Recargar lista después de cerrar modal
+          }} 
         />
       )}
     </div>
