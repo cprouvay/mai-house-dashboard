@@ -669,11 +669,12 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
   const [loading, setLoading] = useState(true)
   const [modoEdicion, setModoEdicion] = useState(false)
   const [guardando, setGuardando] = useState(false)
+  const [productoActual, setProductoActual] = useState(producto)
   const [form, setForm] = useState({
     nombre: producto.nombre,
-    precio_venta: producto.precio_venta,
+    precio_venta: Number(producto.precio_venta),
     categoria: producto.categoria,
-    porciones: producto.porciones
+    porciones: Number(producto.porciones)
   })
 
   useEffect(() => {
@@ -705,6 +706,30 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
     }
   }
 
+  const recargarProducto = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('recetas')
+        .select('*')
+        .eq('id', producto.id)
+        .single()
+
+      if (error) throw error
+      
+      if (data) {
+        setProductoActual(data)
+        setForm({
+          nombre: data.nombre,
+          precio_venta: Number(data.precio_venta),
+          categoria: data.categoria,
+          porciones: Number(data.porciones)
+        })
+      }
+    } catch (error) {
+      console.error('Error recargando producto:', error)
+    }
+  }
+
   const handleSave = async () => {
     setGuardando(true)
     try {
@@ -720,11 +745,11 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
 
       if (error) throw error
 
-      // Actualizar el producto local
-      producto.nombre = form.nombre
-      producto.precio_venta = form.precio_venta
-      producto.categoria = form.categoria
-      producto.porciones = form.porciones
+      // Esperar un momento para que los triggers de BD se ejecuten
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Recargar el producto completo con márgenes recalculados
+      await recargarProducto()
 
       setModoEdicion(false)
     } catch (error) {
@@ -735,8 +760,8 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
     }
   }
 
-  const semaforo = producto.margen_porcentaje >= 60 ? '🟢' :
-                   producto.margen_porcentaje >= 40 ? '🟡' : '🔴'
+  const semaforo = productoActual.margen_porcentaje >= 60 ? '🟢' :
+                   productoActual.margen_porcentaje >= 40 ? '🟡' : '🔴'
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -748,8 +773,8 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
                 <div className="flex items-center gap-3 mb-2">
                   <span className="text-4xl">{semaforo}</span>
                   <div>
-                    <h2 className="text-2xl font-bold">{producto.nombre}</h2>
-                    <p className="text-purple-100">{producto.categoria}</p>
+                    <h2 className="text-2xl font-bold">{productoActual.nombre}</h2>
+                    <p className="text-purple-100">{productoActual.categoria}</p>
                   </div>
                 </div>
               ) : (
@@ -790,7 +815,7 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
                 </div>
               )}
               <div className="text-sm font-mono bg-purple-600 bg-opacity-50 px-3 py-1 rounded inline-block mt-2">
-                {producto.codigo}
+                {productoActual.codigo}
               </div>
             </div>
             
@@ -819,10 +844,10 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
                     onClick={() => {
                       setModoEdicion(false)
                       setForm({
-                        nombre: producto.nombre,
-                        precio_venta: producto.precio_venta,
-                        categoria: producto.categoria,
-                        porciones: producto.porciones
+                        nombre: productoActual.nombre,
+                        precio_venta: Number(productoActual.precio_venta),
+                        categoria: productoActual.categoria,
+                        porciones: Number(productoActual.porciones)
                       })
                     }}
                     disabled={guardando}
@@ -847,19 +872,26 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-gray-50">
           <div className="text-center">
-            <div className="text-sm text-gray-600">Precio Venta</div>
+            <div className="text-sm text-gray-600 mb-1">Precio Venta</div>
             {!modoEdicion ? (
               <div className="text-2xl font-bold text-blue-600">
-                ${producto.precio_venta.toLocaleString('es-CL')}
+                ${productoActual.precio_venta.toLocaleString('es-CL')}
               </div>
             ) : (
               <div className="flex flex-col items-center">
-                <input
-                  type="number"
-                  value={form.precio_venta}
-                  onChange={(e) => setForm({...form, precio_venta: parseFloat(e.target.value) || 0})}
-                  className="w-full px-2 py-1 text-center text-xl font-bold text-blue-600 border-2 border-blue-300 rounded"
-                />
+                <div className="relative w-full">
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-blue-600 font-bold">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    value={form.precio_venta}
+                    onChange={(e) => setForm({...form, precio_venta: Number(e.target.value) || 0})}
+                    className="w-full pl-6 pr-2 py-1 text-center text-xl font-bold text-blue-600 border-2 border-blue-300 rounded"
+                    min="0"
+                    step="100"
+                  />
+                </div>
                 <div className="text-xs text-gray-500 mt-1">
                   ${form.precio_venta.toLocaleString('es-CL')}
                 </div>
@@ -867,21 +899,21 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
             )}
           </div>
           <div className="text-center">
-            <div className="text-sm text-gray-600">Costo Total</div>
+            <div className="text-sm text-gray-600 mb-1">Costo Total</div>
             <div className="text-2xl font-bold text-orange-600">
-              ${producto.costo_por_porcion.toLocaleString('es-CL')}
+              ${productoActual.costo_por_porcion.toLocaleString('es-CL')}
             </div>
           </div>
           <div className="text-center">
-            <div className="text-sm text-gray-600">Margen ($)</div>
+            <div className="text-sm text-gray-600 mb-1">Margen ($)</div>
             <div className="text-2xl font-bold text-green-600">
-              ${producto.margen_pesos.toLocaleString('es-CL')}
+              ${productoActual.margen_pesos.toLocaleString('es-CL')}
             </div>
           </div>
           <div className="text-center">
-            <div className="text-sm text-gray-600">Margen (%)</div>
+            <div className="text-sm text-gray-600 mb-1">Margen (%)</div>
             <div className="text-2xl font-bold text-purple-600">
-              {producto.margen_porcentaje.toFixed(1)}%
+              {productoActual.margen_porcentaje.toFixed(1)}%
             </div>
           </div>
         </div>
@@ -939,7 +971,7 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
                       COSTO TOTAL:
                     </td>
                     <td className="px-4 py-3 text-right text-purple-600 text-lg">
-                      ${producto.costo_total.toLocaleString('es-CL')}
+                      ${productoActual.costo_total.toLocaleString('es-CL')}
                     </td>
                   </tr>
                 </tbody>
@@ -948,13 +980,13 @@ function ModalProducto({ producto, onClose }: { producto: any, onClose: () => vo
           )}
         </div>
 
-        {producto.margen_porcentaje < 60 && (
+        {productoActual.margen_porcentaje < 60 && (
           <div className="p-6 bg-yellow-50 border-t-2 border-yellow-200">
             <h4 className="font-bold text-yellow-800 mb-2">💡 Recomendación de Precio</h4>
             <p className="text-yellow-700">
               Para alcanzar un margen del 60%, deberías vender este producto a: 
               <span className="font-bold text-yellow-900 ml-2">
-                ${Math.ceil(producto.costo_por_porcion / 0.4).toLocaleString('es-CL')}
+                ${Math.ceil(productoActual.costo_por_porcion / 0.4).toLocaleString('es-CL')}
               </span>
             </p>
           </div>
