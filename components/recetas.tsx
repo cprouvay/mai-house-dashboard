@@ -1,7 +1,8 @@
 'use client'
 import React, { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabaseClient'
+import { createClient } from '@/lib/supabase'
 
+const supabase = createClient()
 // Componente principal de Calculadora de Recetas
 export default function Recetas() {
   const [activeTab, setActiveTab] = useState('insumos') // insumos, productos, analisis
